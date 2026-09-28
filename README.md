@@ -1,36 +1,61 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 💻 IT Asset & Hardware Maintenance Tracker
 
-## Getting Started
+A production-grade, non-generic CRUD system built from scratch with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Native MySQL**. 
 
-First, run the development server:
+Designed to demonstrate modern React Server Components, server-side database connection pooling, type-safe Server Actions, and strict security patterns without relying on heavy ORM bloat.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+---
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚡ Architecture Highlights & Key Technical Decisions
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. Zero-Bundle Data Fetching with React Server Components
+Unlike traditional SPAs or legacy Next.js `pages/` that fetch data via client-side `useEffect` or API endpoints, the main inventory dashboard (`app/page.tsx`) is a **React Server Component**. 
+* Queries MySQL directly on the server runtime during request execution.
+* Ships **zero JavaScript** to the browser for fetching logic.
+* Database credentials and query details remain strictly server-side.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 2. MySQL Connection Pooling (`mysql2/promise`)
+Instead of opening and closing database connections per request (which causes high overhead under load), database access is managed via a **centralized MySQL connection pool** (`lib/db.ts`).
+* Reuses active connections in memory across HTTP requests and Server Actions.
+* Configured with connection limits and asynchronous `async/await` promise wrappers.
 
-## Learn More
+### 3. Server Actions for Data Mutations (C/U/D)
+All data mutations (creating assets, updating statuses/assignments, safe deletions) are executed via **Next.js Server Actions** (`app/actions.ts`).
+* Eliminates manual REST API endpoints (`app/api/`) and client `fetch()` boilerplate.
+* Leverages `revalidatePath('/')` to instantly purge server-side router caches and re-render real-time database state upon mutation.
 
-To learn more about Next.js, take a look at the following resources:
+### 4. Defense-in-Depth Security
+* **SQL Injection Prevention:** All SQL statements use parameterized queries (`?` placeholders) executed via `pool.query()`.
+* **Environment Isolation:** Secrets are managed via `.env.local` and kept out of client-side bundles (no `NEXT_PUBLIC_` leakage).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🛠️ Tech Stack
 
-## Deploy on Vercel
+* **Framework:** [Next.js (App Router)](https://nextjs.org/)
+* **Language:** [TypeScript](https://www.typescriptlang.org/)
+* **Database:** [MySQL](https://www.mysql.com/) using [`mysql2/promise`](https://github.com/sidorares/node-mysql2)
+* **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+* **Version Control:** Git
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🗄️ Database Schema
+
+```sql
+CREATE TABLE hardware_assets (
+  id           INT            NOT NULL AUTO_INCREMENT,
+  asset_tag    VARCHAR(50)    NOT NULL UNIQUE,
+  asset_name   VARCHAR(150)   NOT NULL,
+  category     VARCHAR(80)    NOT NULL,
+  assigned_to  VARCHAR(100)       NULL,
+  status       ENUM(
+                 'Active',
+                 'In Repair',
+                 'Decommissioned',
+                 'In Storage'
+               )              NOT NULL DEFAULT 'Active',
+  notes        TEXT               NULL,
+  created_at   DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
