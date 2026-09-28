@@ -1,69 +1,110 @@
-import Image from "next/image";
+import pool from '@/lib/db';
+import { HardwareAsset } from '@/lib/types';
+import { RowDataPacket } from 'mysql2';
 
-export default function Home() {
+// Server-side function to fetch hardware assets directly from MySQL
+async function getAssets(): Promise<HardwareAsset[]> {
+  const [rows] = await pool.query<RowDataPacket[]>(
+    'SELECT * FROM hardware_assets ORDER BY created_at DESC'
+  );
+  return rows as HardwareAsset[];
+}
+
+// Helper function to render status badges with Tailwind colors
+function getStatusBadgeClass(status: HardwareAsset['status']) {
+  switch (status) {
+    case 'Active':
+      return 'bg-green-100 text-green-800 border-green-300';
+    case 'In Repair':
+      return 'bg-amber-100 text-amber-800 border-amber-300';
+    case 'Decommissioned':
+      return 'bg-red-100 text-red-800 border-red-300';
+    case 'In Storage':
+      return 'bg-blue-100 text-blue-800 border-blue-300';
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-300';
+  }
+}
+
+export default async function InventoryPage() {
+  const assets = await getAssets();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="min-h-screen bg-slate-50 p-6 md:p-12">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 pb-4 border-b border-slate-200">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
+              IT Asset Maintenance Tracker
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Internal hardware inventory and health monitoring system
+            </p>
+          </div>
+          <div className="mt-4 md:mt-0">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-slate-200 text-slate-700">
+              Total Assets: {assets.length}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* Inventory Table */}
+        <div className="bg-white shadow-sm rounded-lg border border-slate-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-100 text-slate-700 text-xs uppercase font-semibold tracking-wider border-b border-slate-200">
+                  <th className="py-3.5 px-4">Asset Tag</th>
+                  <th className="py-3.5 px-4">Device Name</th>
+                  <th className="py-3.5 px-4">Category</th>
+                  <th className="py-3.5 px-4">Assigned To</th>
+                  <th className="py-3.5 px-4">Status</th>
+                  <th className="py-3.5 px-4">Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200 text-sm text-slate-700">
+                {assets.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-slate-400">
+                      No hardware assets registered yet.
+                    </td>
+                  </tr>
+                ) : (
+                  assets.map((asset) => (
+                    <tr key={asset.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-indigo-600">
+                        {asset.asset_tag}
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-slate-900">
+                        {asset.asset_name}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600">
+                        {asset.category}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {asset.assigned_to ? (
+                          <span className="text-slate-800">{asset.assigned_to}</span>
+                        ) : (
+                          <span className="text-slate-400 italic">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass(asset.status)}`}>
+                          {asset.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 max-w-xs truncate">
+                        {asset.notes || '—'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
