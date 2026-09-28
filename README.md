@@ -3,7 +3,7 @@
 ![IT Asset Tracker Dashboard](./public/screenshots/register.png)
 ![IT Asset Tracker Dashboard](./public/screenshots/edit.png)
 
-A production-grade, non-generic CRUD system built from scratch with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Native MySQL**. 
+A CRUD system built from scratch with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Native MySQL**. 
 
 Designed to demonstrate modern React Server Components, server-side database connection pooling, type-safe Server Actions, and strict security patterns without relying on heavy ORM bloat.
 
