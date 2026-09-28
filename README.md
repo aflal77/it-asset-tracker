@@ -1,4 +1,7 @@
 # 💻 IT Asset & Hardware Maintenance Tracker
+![IT Asset Tracker Dashboard](./public/screenshots/dashboard.png)
+![IT Asset Tracker Dashboard](./public/screenshots/register.png)
+![IT Asset Tracker Dashboard](./public/screenshots/edit.png)
 
 A production-grade, non-generic CRUD system built from scratch with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS**, and **Native MySQL**. 
 
