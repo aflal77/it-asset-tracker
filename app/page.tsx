@@ -2,6 +2,7 @@ import pool from '@/lib/db';
 import { HardwareAsset } from '@/lib/types';
 import { RowDataPacket } from 'mysql2';
 import AddAssetModal from '@/components/AddAssetModal';
+import AssetRowActions from '@/components/AssetRowActions';
 
 // Server-side function to fetch hardware assets directly from MySQL
 async function getAssets(): Promise<HardwareAsset[]> {
@@ -63,7 +64,54 @@ export default async function InventoryPage() {
                   <th className="py-3.5 px-4">Assigned To</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4">Notes</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 text-sm text-slate-700">
-                {assets.length === 0 ?
+                {assets.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-slate-400">
+                      No hardware assets registered yet.
+                    </td>
+                  </tr>
+                ) : (
+                  assets.map((asset) => (
+                    <tr key={asset.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3.5 px-4 font-mono font-bold text-indigo-600">
+                        {asset.asset_tag}
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-slate-900">
+                        {asset.asset_name}
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-600">
+                        {asset.category}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {asset.assigned_to ? (
+                          <span className="text-slate-800">{asset.assigned_to}</span>
+                        ) : (
+                          <span className="text-slate-400 italic">Unassigned</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusBadgeClass(asset.status)}`}>
+                          {asset.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-slate-500 max-w-xs truncate">
+                        {asset.notes || '—'}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <AssetRowActions asset={asset} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+}

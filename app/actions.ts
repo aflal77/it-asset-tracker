@@ -35,4 +35,39 @@ export async function createAsset(formData: FormData) {
     }
     return { success: false, error: 'Failed to create hardware asset.' };
   }
+}// Server Action to update an asset's status and assigned user
+export async function updateAssetStatus(id: number, status: string, assigned_to: string | null) {
+  if (!id || !status) {
+    throw new Error('Asset ID and status are required.');
+  }
+
+  try {
+    await pool.query(
+      `UPDATE hardware_assets 
+       SET status = ?, assigned_to = ? 
+       WHERE id = ?`,
+      [status, assigned_to, id]
+    );
+
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: 'Failed to update asset status.' };
+  }
+}
+
+// Server Action to safely delete a hardware asset
+export async function deleteAsset(id: number) {
+  if (!id) {
+    throw new Error('Asset ID is required.');
+  }
+
+  try {
+    await pool.query('DELETE FROM hardware_assets WHERE id = ?', [id]);
+
+    revalidatePath('/');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: 'Failed to delete hardware asset.' };
+  }
 }
